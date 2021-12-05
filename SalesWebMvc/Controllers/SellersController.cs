@@ -7,19 +7,20 @@ using SalesWebMvc.Services;
 using SalesWebMvc.Models;
 using SalesWebMvc.Models.ViewModels;
 using SalesWebMvc.Services.Exceptions;
+using System.Diagnostics;
 
 namespace SalesWebMvc.Controllers
 {
-    public class SellersController:Controller
+    public class SellersController : Controller
     {
 
         private readonly SellerService _sellerService;
         private readonly DepartmentService _departmentService;
 
-        public SellersController(SellerService sellerService,DepartmentService departmentService)
+        public SellersController( SellerService sellerService, DepartmentService departmentService )
         {
-            _sellerService=sellerService;
-            _departmentService=departmentService;
+            _sellerService = sellerService;
+            _departmentService = departmentService;
         }
 
         public IActionResult Index()
@@ -32,14 +33,14 @@ namespace SalesWebMvc.Controllers
         {
 
             var departments = _departmentService.FindAll();
-            var viewModel = new SellerFormViewModel { Departments=departments };
+            var viewModel = new SellerFormViewModel { Departments = departments };
             return View(viewModel); // essa ação vai returnar a view chamada create.
         }
 
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(Seller seller)
+        public IActionResult Create( Seller seller )
         {
 
             _sellerService.Insert(seller);
@@ -48,67 +49,67 @@ namespace SalesWebMvc.Controllers
         }
 
 
-        public IActionResult Delete(int? id)
+        public IActionResult Delete( int? id )
         {
 
-            if(id==null)
+            if(id == null)
             {
-                return NotFound();
+                return RedirectToAction(nameof(Error), new { message = "Id não foi fornecido" });
             }
             var obj = _sellerService.FindById(id.Value);
-            if(obj==null)
+            if(obj == null)
             {
-                return NotFound();
+                return RedirectToAction(nameof(Error), new { message = "Id não encontrado" });
             }
             return View(obj);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Delete(int id)
+        public IActionResult Delete( int id )
         {
             _sellerService.Remove(id);
             return RedirectToAction(nameof(Index));
         }
 
-        public IActionResult Details(int? id)
+        public IActionResult Details( int? id )
         {
-            if(id==null)
+            if(id == null)
             {
-                return NotFound();
+                return RedirectToAction(nameof(Error), new { message = "Id não foi fornecido" });
             }
             var obj = _sellerService.FindById(id.Value);
-            if(obj==null)
+            if(obj == null)
             {
-                return NotFound();
+                return RedirectToAction(nameof(Error), new { message = "Id não encontrado" });
             }
             return View(obj);
         }
 
-        public IActionResult Edit(int? id)
+        public IActionResult Edit( int? id )
         {
-            if(id==null)
+            if(id == null)
             {
-                return NotFound();
+                return RedirectToAction(nameof(Error), new { message = "Id não foi fornecido" });
             }
             var obj = _sellerService.FindById(id.Value);
-            if(obj==null)
+            if(obj == null)
             {
-                return NotFound();
+                return RedirectToAction(nameof(Error), new { message = "Id não encontrado" });
             }
 
             List<Department> departments = _departmentService.FindAll();
-            SellerFormViewModel viewModel = new SellerFormViewModel { Seller=obj,Departments=departments };
+            SellerFormViewModel viewModel = new SellerFormViewModel { Seller = obj, Departments = departments };
             return View(viewModel);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(int id,Seller seller)
+        public IActionResult Edit( int id, Seller seller )
         {
-            if(id!=seller.Id)
+            if(id != seller.Id)
             {
-                return BadRequest();
+                return RedirectToAction(nameof(Error), new { message = "Id não correspondem" });
             }
 
             try
@@ -117,15 +118,25 @@ namespace SalesWebMvc.Controllers
                 return RedirectToAction(nameof(Index));
 
             }
-            catch(NotFoundException)
+            catch(NotFoundException e)
             {
 
-                return NotFound();
+                return RedirectToAction(nameof(Error), new { message = e.Message });
             }
-            catch(DbConcurrencyException)
+            catch(DbConcurrencyException e)
             {
-                return BadRequest();
-            }        
+                return RedirectToAction(nameof(Error), new { message = e.Message });
+            }
+        }
+
+        public IActionResult Error( string message )
+        {
+            var viewModel = new ErrorViewModel
+            {
+                RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                Message = message
+            };
+            return View(viewModel);
         }
     }
 }
